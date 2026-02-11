@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHI Reviewer - Enhanced Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-deep: #0A0E1A;
+            --bg-primary: #111827;
+            --bg-secondary: #1F2937;
+            --bg-elevated: #2D3748;
+            --text-primary: #F9FAFB;
+            --text-secondary: #9CA3AF;
+            --text-muted: #6B7280;
+            --border: #374151;
+            --accent-cyan: #06B6D4;
+            --accent-emerald: #10B981;
+            --accent-rose: #F43F5E;
+            --accent-amber: #F59E0B;
+            --shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .topbar {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--accent-cyan);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0891b2;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-elevated);
+        }
+
+        .btn-success {
+            background: var(--accent-emerald);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            gap: 16px;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        /* Queue Panel */
+        .queue-panel {
+            width: 300px;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .queue-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .queue-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .queue-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .queue-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .queue-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .queue-item:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent-cyan);
+        }
+
+        .queue-item.active {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .queue-item-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-item-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .queue-item-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .mini-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: var(--accent-emerald);
+            transition: width 0.3s;
+        }
+
+        /* Document Panel */
+        .document-panel {
+            flex: 1;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .document-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .document-header-left {
+            flex: 1;
+        }
+
+        .document-header-right {
+            display: flex;
+            gap: 8px;
+        }
+
+        .document-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .document-meta {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .document-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .document-editor {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #docEditor {
+            flex: 1;
+            width: 100%;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            resize: none;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 60px;
+            text-align: center;
+        }
+
+        .empty-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .empty-text {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        /* Detections Panel */
+        .detections-panel {
+            width: 400px;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .detections-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detections-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .detections-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .detection-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .detection-item.modified {
+            border-color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .detection-type {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--accent-cyan);
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .detection-value {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .detection-context {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .detection-edit-input {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .detection-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .action-accept {
+            background: var(--accent-emerald);
+            color: white;
+        }
+
+        .action-reject {
+            background: var(--accent-rose);
+            color: white;
+        }
+
+        .action-modify {
+            background: var(--accent-amber);
+            color: white;
+        }
+
+        .action-save {
+            background: var(--accent-cyan);
+            color: white;
+        }
+
+        .action-cancel {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .upload-area {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--accent-emerald);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            display: flex;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span>✓</span>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <div class="topbar">
+        <div class="logo">
+            <div class="logo-icon">🔒</div>
+            <span>PHI Reviewer</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <a href="phi-dashboard.html" class="btn btn-secondary" style="text-decoration: none;">📊 Dashboard</a>
+            <button class="btn btn-primary" onclick="loadQueueList()">🔄 Refresh Queue</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Queue Panel -->
+        <div class="queue-panel">
+            <div class="queue-header">
+                <div class="queue-title">Document Queue</div>
+                <div class="queue-subtitle" id="queueCount">Loading...</div>
+            </div>
+            <div class="queue-list" id="queueList">
+                <div class="empty-state">
+                    <p class="empty-text">Loading queue...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Panel -->
+        <div class="document-panel">
+            <div id="emptyState" class="empty-state">
+                <h2 class="empty-title">No Document Selected</h2>
+                <p class="empty-text">Select a document from the queue or upload a new one</p>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
+                    <div style="font-weight: 600; margin-bottom: 8px;">Drop files here or click to upload</div>
+                    <div style="color: var(--text-secondary); font-size: 14px;">Supports PDF files</div>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf" onchange="handleFileUpload(event)">
+            </div>
+
+            <div id="documentView" style="display: none; height: 100%; flex-direction: column;">
+                <div class="document-header">
+                    <div class="document-header-left">
+                        <div class="document-title" id="docTitle">Document Title</div>
+                        <div class="document-meta" id="docMeta">Metadata</div>
+                    </div>
+                    <div class="document-header-right">
+                        <button class="btn btn-secondary" id="editBtn" onclick="toggleEditMode()">✏️ Edit</button>
+                        <button class="btn btn-success" id="saveBtn" onclick="saveDocument()" style="display: none;">💾 Save</button>
+                        <button class="btn btn-secondary" id="cancelBtn" onclick="cancelEdit()" style="display: none;">✕ Cancel</button>
+                    </div>
+                </div>
+                <div class="document-content" id="docContent">Loading...</div>
+                <div class="document-editor" id="docEditor" style="display: none;">
+                    <textarea id="docEditorText"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detections Panel -->
+        <div class="detections-panel">
+            <div class="detections-header">
+                <div class="detections-title">
+                    <h3>PHI Detections</h3>
+                    <span id="detectionsCount">0</span>
+                </div>
+            </div>
+            <div class="detections-list" id="detectionsList">
+                <div class="empty-state">
+                    <p class="empty-text">No detections</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            N8N_BASE_URL: 'https://n8n-bfqlh-u60472.vm.elestio.app',
+            ENDPOINTS: {
+                UPLOAD: '/webhook/phi-upload',
+                FETCH_DOCUMENT: '/webhook/phi-review/fetch-document',
+                QUEUE_LIST: '/webhook/phi-review/queue-list',
+                SUBMIT_DECISION: '/webhook/phi-review/submit-decision',
+                UPDATE_DOCUMENT: '/webhook/phi-review/update-document'
+            }
+        };
+
+        const state = {
+            queue: [],
+            currentDocument: null,
+            detections: [],
+            editMode: false,
+            originalContent: '',
+            modifiedDetections: {}
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQueueList();
+        });
+
+        // Load queue list
+        async function loadQueueList() {
+            showLoading(true);
+            try {
+                const response = await fetch(`${CONFIG.N8N_BASE_URL}${CONFIG.ENDPOINTS.QUEUE_LIST}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    state.queue = data.documents || [];
+                    displayQueue();
+                }
+            } catch (error) {
+                console.error('Queue load error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display queue
+        function displayQueue() {
+            const list = document.getElementById('queueList');
+            const count = document.getElementById('queueCount');
+            
+            count.textContent = `${state.queue.length} documents pending`;
+            
+            if (state.queue.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p class="empty-text">No documents in queue</p></div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            state.queue.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = 'queue-item';
+                if (state.currentDocument && state.currentDocument.id === doc.id) {
+                    item.classList.add('active');
+                }
+                
+                item.innerHTML = `
+                    <div class="queue-item-title">${doc.title}</div>
+                    <div class="queue-item-meta">${doc.detectionCount} detections • ${new Date(doc.createdAt).toLocaleString()}</div>
+                    <div class="queue-item-progress">
+                        <div class="mini-progress-bar">
+                            <div class="mini-progress-fill" style="width: ${doc.percentComplete}%"></div>
+                        </div>
+                        <span>${doc.percentComplete}%</span>
+                    </div>
+                `;
+                
+                item.onclick = () => loadDocument(doc.id);
+                list.appendChild(item);
+            });
+        }
+
+        // Load specific document
+        async function loadDocument(documentId) {
+            showLoading(true);
+            try {
+                const response = await fetch(`${CONFIG.N8N_BASE_URL}${CONFIG.ENDPOINTS.FETCH_DOCUMENT}`);
+                const data = await response.json();
+                
+                if (data.success && data.document) {
+                    state.currentDocument = data.document;
+                    state.detections = data.detections || [];
+                    state.originalContent = data.document.content || '';
+                    state.editMode = false;
+                    state.modifiedDetections = {};
+                    displayDocument();
+                    displayDetections();
+                    displayQueue();
+                }
+            } catch (error) {
+                console.error('Document load error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display document
+        function displayDocument() {
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('documentView').style.display = 'flex';
+            
+            document.getElementById('docTitle').textContent = state.currentDocument.filename || 'Untitled';
+            document.getElementById('docMeta').textContent = `ID: ${state.currentDocument.id}`;
+            document.getElementById('docContent').textContent = state.currentDocument.content || 'No content';
+            
+            // Reset edit mode UI
+            document.getElementById('docContent').style.display = 'block';
+            document.getElementById('docEditor').style.display = 'none';
+            document.getElementById('editBtn').style.display = 'inline-block';
+            document.getElementById('saveBtn').style.display = 'none';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        // Toggle edit mode for document
+        function toggleEditMode() {
+            state.editMode = true;
+            document.getElementById('docContent').style.display = 'none';
+            document.getElementById('docEditor').style.display = 'flex';
+            document.getElementById('docEditorText').value = state.currentDocument.content || '';
+            document.getElementById('editBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'inline-block';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
+        }
+
+        // Cancel edit mode
+        function cancelEdit() {
+            state.editMode = false;
+            displayDocument();
+        }
+
+        // Save document
+        async function saveDocument() {
+            const newContent = document.getElementById('docEditorText').value;
+            
+            showLoading(true);
+            try {
+                const response = await fetch(`${CONFIG.N8N_BASE_URL}${CONFIG.ENDPOINTS.UPDATE_DOCUMENT}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        documentId: state.currentDocument.id,
+                        content: newContent,
+                        updatedBy: 'reviewer-1'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    state.currentDocument.content = newContent;
+                    state.editMode = false;
+                    showToast('Document saved successfully!');
+                    displayDocument();
+                } else {
+                    alert('Failed to save document');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Error saving document');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display detections
+        function displayDetections() {
+            const list = document.getElementById('detectionsList');
+            const count = document.getElementById('detectionsCount');
+            
+            count.textContent = state.detections.length;
+            
+            if (state.detections.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p class="empty-text">No detections</p></div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            state.detections.forEach((det, idx) => {
+                const item = document.createElement('div');
+                item.className = 'detection-item';
+                item.id = `detection-${idx}`;
+                
+                const isModifying = state.modifiedDetections[idx];
+                
+                if (isModifying) {
+                    item.classList.add('modified');
+                    item.innerHTML = `
+                        <div class="detection-type">${det.type}</div>
+                        <div class="detection-value">Original: ${det.value}</div>
+                        <input type="text" class="detection-edit-input" id="edit-${idx}" value="${det.value}" placeholder="Enter corrected value">
+                        <div class="detection-actions">
+                            <button class="action-btn action-save" onclick="saveDetectionEdit(${idx})">💾 Save</button>
+                            <button class="action-btn action-cancel" onclick="cancelDetectionEdit(${idx})">✕ Cancel</button>
+                        </div>
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <div class="detection-type">${det.type}</div>
+                        <div class="detection-value">${det.value}</div>
+                        <div class="detection-context">${det.context || ''}</div>
+                        <div class="detection-actions">
+                            <button class="action-btn action-accept" onclick="makeDecision(${idx}, 'accept')">✓ Accept</button>
+                            <button class="action-btn action-reject" onclick="makeDecision(${idx}, 'reject')">✗ Reject</button>
+                            <button class="action-btn action-modify" onclick="startDetectionEdit(${idx})">✎ Modify</button>
+                        </div>
+                    `;
+                }
+                
+                list.appendChild(item);
+            });
+        }
+
+        // Start editing a detection
+        function startDetectionEdit(index) {
+            state.modifiedDetections[index] = true;
+            displayDetections();
+            // Focus the input
+            setTimeout(() => {
+                document.getElementById(`edit-${index}`).focus();
+            }, 100);
+        }
+
+        // Cancel detection edit
+        function cancelDetectionEdit(index) {
+            delete state.modifiedDetections[index];
+            displayDetections();
+        }
+
+        // Save detection edit
+        async function saveDetectionEdit(index) {
+            const newValue = document.getElementById(`edit-${index}`).value;
+            
+            if (!newValue.trim()) {
+                alert('Please enter a corrected value');
+                return;
+            }
+            
+            await makeDecision(index, 'modify', newValue);
+            delete state.modifiedDetections[index];
+            displayDetections();
+        }
+
+        // Make decision on detection
+        async function makeDecision(index, decision, modifiedValue = null) {
+            const detection = state.detections[index];
+            
+            try {
+                showLoading(true);
+                
+                const response = await fetch(`${CONFIG.N8N_BASE_URL}${CONFIG.ENDPOINTS.SUBMIT_DECISION}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        documentId: state.currentDocument.id,
+                        detectionId: detection.id,
+                        decision: decision,
+                        modifiedValue: modifiedValue,
+                        reviewerId: 'reviewer-1'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast(`Decision "${decision}" recorded!`);
+                    
+                    // Reload document to get updated detection status
+                    await loadDocument(state.currentDocument.id);
+                } else {
+                    alert('Failed to save decision');
+                }
+            } catch (error) {
+                console.error('Decision error:', error);
+                alert('Error saving decision');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle file upload
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            showLoading(true);
+            try {
+                const text = await readFileContent(file);
+                
+                const response = await fetch(`${CONFIG.N8N_BASE_URL}${CONFIG.ENDPOINTS.UPLOAD}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        document_id: `upload-${Date.now()}`,
+                        metadata: {
+                            filename: file.name,
+                            size: file.size,
+                            type: file.type,
+                            uploaded_at: new Date().toISOString()
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    showToast('Upload successful!');
+                    loadQueueList();
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Read PDF content
+        async function readFileContent(file) {
+            if (file.type === 'application/pdf') {
+                const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                
+                let fullText = '';
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n\n';
+                }
+                return fullText;
+            }
+            return '';
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+
+        // Show toast notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
